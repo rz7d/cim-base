@@ -11,7 +11,7 @@ public class CommandBusTest {
     class TestCommand {
       @Command(name = "test", description = "", permission = "")
       public void execute(String arg) {
-        assertEquals(arg, "testmes");
+        assertEquals("testmes", arg);
       }
     }
     var bus = new CommandBus();
