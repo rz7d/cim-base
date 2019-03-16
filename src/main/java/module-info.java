@@ -6,7 +6,6 @@ module milktea.cim.base {
   exports milktea.cim.framework.extension;
   exports milktea.cim.framework.interactive;
   exports milktea.cim.framework.permission;
-  exports milktea.cim.framework.util.random;
   exports milktea.cim.framework.util.type;
 
   requires transitive java.logging;
