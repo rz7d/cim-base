@@ -1,86 +1,124 @@
 package milktea.cim.framework.util.random;
 
-public class XORShift {
+import java.util.Arrays;
+import java.util.Random;
 
-  private long[] seed;
+public class XORShift extends Random {
+
+  private static final long serialVersionUID = -9202076145657714508L;
+
+  long[] seed;
 
   private double nextGaussian;
   private boolean hasNextGaussian;
 
   public XORShift() {
-    long l = System.currentTimeMillis();
-    seed = new long[] { l, l, l, l };
-    for (long i = System.nanoTime() % 1000; i != 0; i--) {
+    setSeed(System.currentTimeMillis());
+    for (long i = System.nanoTime() % 1000; i != 0; --i) {
       next();
     }
   }
 
-  public XORShift(long... seed) {
-    setSeed(seed);
+  public XORShift(final long... seed) {
+    if (seed != null && seed.length > 3) {
+      assert seed != null;
+      System.arraycopy(seed, 0, this.seed, 0, this.seed.length);
+    } else {
+      if (seed == null) {
+        assert seed == null;
+        setSeed(System.currentTimeMillis());
+      } else {
+        assert seed != null;
+        setSeed(seed);
+      }
+    }
   }
 
-  public XORShift setSeed(long seed) {
-    this.seed = new long[] { seed, seed, seed, seed };
-    return this;
+  long[] seed() {
+    if (seed == null) {
+      seed = new long[4];
+    }
+    return seed;
+  }
+
+  void seed(int index, long value) {
+    seed()[index] = value;
+  }
+
+  long seed(int index) {
+    return seed()[index];
+  }
+
+  @Override
+  public void setSeed(long seed) {
+    Arrays.fill(seed(), seed);
   }
 
   public XORShift setSeed(long... seed) {
     if (seed.length < 4) {
-      return setSeed(seed[0]);
+      setSeed(seed[0]);
+      return this;
     }
-    this.seed = seed;
+    System.arraycopy(seed, 0, seed(), 0, seed().length);
     return this;
   }
 
   public long next() {
-    long t = seed[0] ^ (seed[0] << 11);
-    seed[0] = seed[1];
-    seed[1] = seed[2];
-    seed[2] = seed[3];
-    seed[3] = (seed[3] ^ (seed[3] >> 19)) ^ (t ^ (t >> 8));
-    return seed[3];
+    long t = seed(0) ^ (seed(0) << 11);
+    seed(0, seed(1));
+    seed(1, seed(2));
+    seed(2, seed(3));
+    seed(3, (seed(3) ^ (seed(3) >> 19)) ^ (t ^ (t >> 8)));
+    return seed(3);
   }
 
+  @Override
   public long nextLong() {
-    long l = this.next();
-    if (this.nextBoolean()) {
+    long l = next();
+    if (nextBoolean()) {
       l = ~l + 1L;
     }
     return l;
   }
 
+  @Override
   public int nextInt() {
-    return (int) this.next();
+    return (int) next();
   }
 
+  @Override
   public int nextInt(int i) {
-    double r = this.nextDouble();
+    double r = nextDouble();
     r *= i;
     r = Math.floor(r);
     return (int) r;
   }
 
+  @Override
   public float nextFloat() {
     return (float) this.next() / Long.MAX_VALUE;
   }
 
+  @Override
   public double nextDouble() {
     return (double) this.next() / Long.MAX_VALUE;
   }
 
-  private long temp;
-  private int cnt = 0;
+  private int boolSetOffset = 0;
+  private long currentBoolSet;
 
+  @Override
   public boolean nextBoolean() {
-    if (cnt == 63) {
-      temp = this.next();
-      cnt = 0;
+    if (boolSetOffset == 63) {
+      currentBoolSet = next();
+      boolSetOffset = 0;
     }
-    boolean b = ((temp >> cnt) & 1L) == 0;
-    cnt += 1;
+    boolean b = ((currentBoolSet >> boolSetOffset) & 1L) == 0;
+    ++boolSetOffset;
     return b;
   }
 
+  @Override
   public void nextBytes(byte[] b) {
     long tmp = nextLong();
     int count = 0;
@@ -94,14 +132,15 @@ public class XORShift {
     }
   }
 
+  @Override
   public double nextGaussian() {
     if (hasNextGaussian) {
       hasNextGaussian = false;
       return nextGaussian;
     }
-    double x = Math.sqrt(-2D * Math.log(this.nextDouble()));
-    double y = 2D * Math.PI * this.nextDouble();
-    double z = x * Math.sin(y);
+    var x = Math.sqrt(-2D * Math.log(nextDouble()));
+    var y = 2D * Math.PI * nextDouble();
+    var z = x * Math.sin(y);
     nextGaussian = x * Math.cos(y);
     hasNextGaussian = true;
     return z;
